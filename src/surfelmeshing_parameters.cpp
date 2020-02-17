@@ -16,6 +16,12 @@ SurfelMeshingParameters::SurfelMeshingParameters(const ros::NodeHandle &nh_priva
     depth_scaling = 5000.0f;  // The default is for TUM RGB-D datasets.
     nh_private.param("depth_scaling", depth_scaling, depth_scaling); // "Input depth scaling: input_depth = depth_scaling * depth_in_meters. The default is for TUM RGB-D benchmark datasets."
 
+    apply_threshold = false;
+    nh_private.param("apply_depth_threshold", apply_threshold, apply_threshold);
+
+    depth_threshold = 100.0f;
+    nh_private.param("depth_threshold", depth_threshold, depth_threshold);
+
     max_pose_interpolation_time_extent = 0.05f;
     nh_private.param("max_pose_interpolation_time_extent", max_pose_interpolation_time_extent, max_pose_interpolation_time_extent); // "The maximum time (in seconds) between the timestamp of a frame, and the preceding respectively succeeding trajectory pose timestamp, to interpolate the frame's pose. If this threshold is exceeded, the frame will be dropped since no close-enough pose information is available."
 

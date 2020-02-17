@@ -8,7 +8,8 @@ SurfelMeshingServer::SurfelMeshingServer(const ros::NodeHandle& nh, const ros::N
     : nh_(nh), 
       nh_private_(nh_private),
       param_(nh_private),
-      current_frame_(0)
+      current_frame_(0),
+      save_once(false)
       {
 
     rosmesh_pub_ = nh_private_.advertise<mesh_msgs::TriangleMeshStamped>("rosmesh", 1, true);
@@ -54,10 +55,15 @@ void SurfelMeshingServer::messageCallback(const sensor_msgs::ImageConstPtr& colo
     image_frame->SetGlobalTFrame(global_T_frame);
     rgbd_video.color_frames_mutable()->push_back(image_frame);
 
-    auto depth = std::make_shared<vis::Image<vis::u16>>(ROSConversions::convertDepthImage(depth_image, param_.depth_scaling));
+    auto depth = std::make_shared<vis::Image<vis::u16>>(ROSConversions::convertDepthImage(depth_image, param_.depth_scaling, param_.apply_threshold, param_.depth_threshold));
     vis::ImageFramePtr<vis::u16, vis::SE3f> depth_frame(new vis::ImageFrame<vis::u16, vis::SE3f>(depth));
     depth_frame->SetGlobalTFrame(global_T_frame);
     rgbd_video.depth_frames_mutable()->push_back(depth_frame);
+    if(!save_once){
+        io.Write("/home/jonasgerstner/Pictures/conversion/first.png", *depth);
+        save_once = true;
+    }
+
 
     if(rgbd_video.frame_count() > param_.outlier_filtering_frame_count / 2 + 1) {
         pipeline_ptr->integrateImages(current_frame_);

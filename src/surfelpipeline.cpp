@@ -746,14 +746,14 @@ std::shared_ptr<vis::Mesh3fCu8> SurfelPipeline::getMesh() {
     // Also use the positions from the surfel_meshing such that positions
     // and the mesh are from a consistent state.
     surfel_meshing.ConvertToMesh3fCu8(mesh.get());
-    /*
+
     vis::CUDABuffer<float> position_buffer(1, 3 * reconstruction.surfels_size());
     vis::CUDABuffer<vis::u8> color_buffer(1, 3 * reconstruction.surfels_size());
     reconstruction.ExportVertices(stream, &position_buffer, &color_buffer);
     float* position_buffer_cpu = new float[3 * reconstruction.surfels_size()];
     vis::u8* color_buffer_cpu = new vis::u8[3 * reconstruction.surfels_size()];
     position_buffer.DownloadAsync(stream, position_buffer_cpu);
-    //color_buffer.DownloadAsync(stream, color_buffer_cpu);
+    color_buffer.DownloadAsync(stream, color_buffer_cpu);
     cudaStreamSynchronize(stream);
     vis::usize index = 0;
     int count_nans = 0;
@@ -772,9 +772,9 @@ std::shared_ptr<vis::Mesh3fCu8> SurfelPipeline::getMesh() {
         ++index;
     }
 
-    //CHECK_EQ(index, mesh->vertices()->size());
+    CHECK_EQ(index, mesh->vertices()->size());
 
     delete[] color_buffer_cpu;
-    delete[] position_buffer_cpu;*/
+    delete[] position_buffer_cpu;
     return mesh;
 }

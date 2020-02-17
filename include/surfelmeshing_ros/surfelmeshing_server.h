@@ -69,5 +69,8 @@ protected:
     bool generateMeshToolsMesh();
 
     bool setImuCam(const std::string &transform_str);
+
+    vis::ImageIOLibPng io;
+    bool save_once;
 };
 #endif //SURFELMESHING_ROS_SURFELMESHING_SERVER_H

@@ -23,6 +23,8 @@ public:
 
     // Dataset playback parameters
     float depth_scaling;  // The default is for TUM RGB-D datasets.
+    bool apply_threshold;
+    float depth_threshold;
     float max_pose_interpolation_time_extent;
     int start_frame;
     int end_frame;

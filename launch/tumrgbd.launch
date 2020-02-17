@@ -1,0 +1,16 @@
+<launch>
+  <node pkg="surfelmeshing_ros" type="surfelmeshing_node" name="surfelmeshing" clear_params="true" output="screen" >
+
+    <remap from="transform" to="/transform_kinect" />
+    <remap from="image" to="/camera/rgb/image_color" />
+    <remap from="depth_image" to="/camera/depth/image" />
+
+    <param name="width" value="640" />
+    <param name="height" value="480" />
+    <param name="cam_fx" value="525.0" />
+    <param name="cam_cx" value="319.5" />
+    <param name="cam_fy" value="525.0" />
+    <param name="cam_cy" value="239.5" />
+    <param name="ego_to_cam" value="0.017 -0.021 -0.070 -0.012 0.712 -0.702 0.016" /> <!-- groundtruth.txt gives optical center of color camera to world, this is /kinect to /openni_rgb_optical_frame -->
+  </node>
+</launch>

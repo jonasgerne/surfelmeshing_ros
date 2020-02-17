@@ -16,18 +16,25 @@
 #include <libvis/image.h>
 
 namespace ROSConversions {
-    inline vis::Image<vis::u16> convertDepthImage(const sensor_msgs::ImageConstPtr &image_input, double depth_scaling) {
+    inline vis::Image<vis::u16> convertDepthImage(const sensor_msgs::ImageConstPtr &image_input, double depth_scaling, bool apply_threshold, double max_depth) {
         cv_bridge::CvImageConstPtr cv_ptr;
+        cv::Mat thresh;
+        const cv::Mat* matptr;
         try {
             cv_ptr = cv_bridge::toCvShare(image_input, sensor_msgs::image_encodings::TYPE_32FC1);
         }
         catch (const cv_bridge::Exception &e) {
             ROS_ERROR("cv_bridge exception: %s", e.what());
         }
-
+        if (apply_threshold){
+            // apply a threshold for CARLA gt depth images as these go up to 1000.0m
+            cv::threshold(cv_ptr->image, thresh, max_depth, 0.0, cv::THRESH_TOZERO_INV);
+            matptr = &thresh;
+        } else
+            matptr = &cv_ptr->image;
         // NOTE: don't scale the images, cutoff is done later
         cv::Mat img_scaled_16u;
-        cv::Mat(cv_ptr->image).convertTo(img_scaled_16u, CV_16UC1, depth_scaling);
+        cv::Mat(*matptr).convertTo(img_scaled_16u, CV_16UC1, depth_scaling);
 
         return vis::Image<vis::u16>(reinterpret_cast<vis::u32>(image_input->width),
                                     reinterpret_cast<vis::u32>(image_input->height),
