@@ -1,0 +1,1 @@
+Use with this [fork](https://github.com/jonasgerne/surfelmeshing) to import the SurfelMeshing and libvis libraries via ROS/catkin.
