@@ -73,9 +73,9 @@ namespace ROSConversions {
         // Eigen uses this order: Quaternion (const Scalar &w, const Scalar &x, const Scalar &y, const Scalar &z)
         const tf::Quaternion &q = transform_msg.getRotation();
         const tf::Vector3 &v = transform_msg.getOrigin();
-        Eigen::Quaternionf quat{q.getW(), q.getX(), q.getY(), q.getZ()};
-        vis::Vector3f pos{v.getX(), v.getY(), v.getZ()};
-        return vis::SE3f{quat, pos};
+        Eigen::Quaterniond quat{q.getW(), q.getX(), q.getY(), q.getZ()};
+        vis::Vector3d pos{v.getX(), v.getY(), v.getZ()};
+        return vis::SE3f{quat.cast<float>(), pos.cast<float>()};
     }
 }
 #endif //SURFELMESHING_ROS_CONVERSIONS_FROM_ROS_H
