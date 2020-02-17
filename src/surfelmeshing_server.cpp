@@ -59,10 +59,10 @@ void SurfelMeshingServer::messageCallback(const sensor_msgs::ImageConstPtr& colo
     vis::ImageFramePtr<vis::u16, vis::SE3f> depth_frame(new vis::ImageFrame<vis::u16, vis::SE3f>(depth));
     depth_frame->SetGlobalTFrame(global_T_frame);
     rgbd_video.depth_frames_mutable()->push_back(depth_frame);
-    if(!save_once){
+    /*if(!save_once){
         io.Write("/home/jonasgerstner/Pictures/conversion/first.png", *depth);
         save_once = true;
-    }
+    }*/
 
 
     if(rgbd_video.frame_count() > param_.outlier_filtering_frame_count / 2 + 1) {
