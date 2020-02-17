@@ -4,8 +4,8 @@ project(surfelmeshing_ros)
 # surfelmeshing actually requires Qt >= 5.8 https://github.com/puzzlepaint/surfelmeshing/issues/10
 list(APPEND CMAKE_PREFIX_PATH "/opt/Qt/5.12.5/gcc_64")
 # quick fix for weird catkin not found errors in CLion https://github.com/catkin/catkin_tools/pull/391#issuecomment-555285372
-list(APPEND CMAKE_PREFIX_PATH "/opt/ros/kinetic")
-list(APPEND CMAKE_PREFIX_PATH "/opt/ros/kinetic/share/catkin/cmake")
+list(APPEND CMAKE_PREFIX_PATH "/opt/ros/$ENV{ROS_DISTRO}")
+list(APPEND CMAKE_PREFIX_PATH "/opt/ros/$ENV{ROS_DISTRO}/share/catkin/cmake")
 
 enable_language(CUDA)
 # required because linking to CUDA libraries from non-.cu files doesn't work with the new enable_language(CUDA) (source: modern-cmake)
