@@ -27,7 +27,7 @@ namespace ROSConversions{
     inline void storeToMeshHelper(mesh_msgs::TriangleMesh& mesh_msg, const vis::PointCloud<vis::Point3fCu8>& cloud) {
         mesh_msg.vertex_colors.reserve(cloud.size());
 
-        float normalization_factor = 1.0f / std::numeric_limits<vis::u8>::max();
+        constexpr float normalization_factor = 1.0f / std::numeric_limits<vis::u8>::max();
 
         for (vis::usize i = 0; i < cloud.size(); ++ i) {
             const vis::Point3fCu8& point = cloud.data()[i];
@@ -50,7 +50,7 @@ namespace ROSConversions{
     inline void storeToMeshHelper(mesh_msgs::TriangleMesh& mesh_msg, const vis::PointCloud<vis::Point3fC3u8>& cloud) {
         mesh_msg.vertex_colors.reserve(cloud.size());
 
-        float normalization_factor = 1.0f / std::numeric_limits<vis::u8>::max();
+        constexpr float normalization_factor = 1.0f / std::numeric_limits<vis::u8>::max();
 
         for (vis::usize i = 0; i < cloud.size(); ++ i) {
             const vis::Point3fC3u8& point = cloud.data()[i];
@@ -74,7 +74,7 @@ namespace ROSConversions{
         mesh_msg.vertex_normals.reserve(cloud.size());
         mesh_msg.vertex_colors.reserve(cloud.size());
 
-        float normalization_factor = 1.0f / std::numeric_limits<vis::u8>::max();
+        constexpr float normalization_factor = 1.0f / std::numeric_limits<vis::u8>::max();
 
         for (vis::usize i = 0; i < cloud.size(); ++ i) {
             const vis::Point3fC3u8Nf& point = cloud.data()[i];
@@ -115,7 +115,7 @@ namespace ROSConversions{
         for (const vis::Triangle<vis::u32>& triangle : mesh->triangles()){
             mesh_msgs::TriangleIndices indices_msg;
             for (int j = 0; j < 3; j++)
-                indices_msg.vertex_indices[j] = static_cast<uint32_t>(triangle.index(j) + 1);
+                indices_msg.vertex_indices[j] = static_cast<uint32_t>(triangle.index(j));
             mesh_msg.triangles.push_back(indices_msg);
         }
 

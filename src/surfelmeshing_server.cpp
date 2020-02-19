@@ -33,6 +33,8 @@ SurfelMeshingServer::SurfelMeshingServer(const ros::NodeHandle& nh, const ros::N
 
     generate_mesh_srv_ = nh_private_.advertiseService("generate_mesh", &SurfelMeshingServer::generateMeshCallback,this);
 
+    save_ply_srv_ = nh_private_.advertiseService("save_ply", &SurfelMeshingServer::savePLYCallback, this);
+
     setImuCam(param_.ego_to_cam);
     ROS_INFO("Setup Server.");
 }
@@ -59,10 +61,10 @@ void SurfelMeshingServer::messageCallback(const sensor_msgs::ImageConstPtr& colo
     vis::ImageFramePtr<vis::u16, vis::SE3f> depth_frame(new vis::ImageFrame<vis::u16, vis::SE3f>(depth));
     depth_frame->SetGlobalTFrame(global_T_frame);
     rgbd_video.depth_frames_mutable()->push_back(depth_frame);
-    /*if(!save_once){
+    if(!save_once){
         io.Write("/home/jonasgerstner/Pictures/conversion/first.png", *depth);
         save_once = true;
-    }*/
+    }
 
 
     if(rgbd_video.frame_count() > param_.outlier_filtering_frame_count / 2 + 1) {
@@ -76,7 +78,13 @@ bool SurfelMeshingServer::generateMeshCallback(std_srvs::Empty::Request& /*reque
     return generateMeshToolsMesh();
 }
 
+bool SurfelMeshingServer::savePLYCallback(std_srvs::Empty::Request& /*request*/,
+                                               std_srvs::Empty::Response& /*response*/) {  // NOLINT
+    return pipeline_ptr->SavePointCloudAsPLY();
+}
+
 bool SurfelMeshingServer::generateMeshToolsMesh() {
+    pipeline_ptr->prepareOutput(current_frame_-1);
     auto mesh = pipeline_ptr->getMesh();
 
     mesh_msgs::TriangleMeshStamped mesh_msg_stmp;

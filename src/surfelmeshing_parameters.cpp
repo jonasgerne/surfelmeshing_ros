@@ -99,10 +99,6 @@ SurfelMeshingParameters::SurfelMeshingParameters(const ros::NodeHandle &nh_priva
     long_edge_tolerance_factor = 1.5f;
     nh_private.param("long_edge_tolerance_factor", long_edge_tolerance_factor, long_edge_tolerance_factor); // "Tolerance factor over 'max_neighbor_search_range_increase_factor * surfel_radius' for deciding whether to remesh a triangle with long edges."
 
-    synchronous_triangulation = false;
-    nh_private.param("synchronous_meshing", synchronous_triangulation, synchronous_triangulation); // "Makes the meshing proceed synchronously to the surfel integration (instead of asynchronously)."
-    asynchronous_triangulation = !synchronous_triangulation;
-
     full_meshing_every_frame = false;
     nh_private.param("full_meshing_every_frame", full_meshing_every_frame, full_meshing_every_frame); // "Instead of partial remeshing, performs full meshing in every frame. Only implemented for using together with --synchronous_meshing."
 
@@ -189,7 +185,7 @@ SurfelMeshingParameters::SurfelMeshingParameters(const ros::NodeHandle &nh_priva
     create_video = false;
     nh_private.param("create_video", create_video, create_video); // "Records a video by writing screenshots frame-by-frame to the current working directory."
 
-    debug_depth_preprocessing  = false;
+    debug_depth_preprocessing = false;
     nh_private.param("debug_depth_preprocessing", debug_depth_preprocessing, debug_depth_preprocessing); // "Activates debug display of the depth maps at various stages of pre-processing."
 
     debug_neighbor_rendering = false;

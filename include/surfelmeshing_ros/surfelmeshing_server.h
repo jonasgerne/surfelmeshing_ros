@@ -37,6 +37,7 @@ public:
     void messageCallback(const sensor_msgs::ImageConstPtr &, const sensor_msgs::ImageConstPtr &,
                          const geometry_msgs::TransformStampedConstPtr &);
     bool generateMeshCallback(std_srvs::Empty::Request&, std_srvs::Empty::Response&);
+    bool savePLYCallback(std_srvs::Empty::Request&, std_srvs::Empty::Response&);
 
 
 protected:
@@ -51,6 +52,7 @@ protected:
 
     // Services
     ros::ServiceServer generate_mesh_srv_;
+    ros::ServiceServer save_ply_srv_;
 
     // SurfelMeshing
     vis::RGBDVideo<vis::Vec3u8, vis::u16> rgbd_video;

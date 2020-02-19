@@ -57,8 +57,6 @@ public:
     float max_triangle_angle;
     float max_neighbor_search_range_increase_factor;
     float long_edge_tolerance_factor;
-    bool synchronous_triangulation;
-    bool asynchronous_triangulation;
     bool full_meshing_every_frame;
     bool full_retriangulation_at_end;
 

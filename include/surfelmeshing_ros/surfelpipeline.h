@@ -28,7 +28,6 @@
 #include "surfel_meshing/asynchronous_meshing.h"
 #include "surfel_meshing/cuda_depth_processing.cuh"
 #include "surfel_meshing/cuda_surfel_reconstruction.h"
-//#include "surfel_meshing/surfel_meshing_render_window.h"
 #include "surfel_meshing/surfel.h"
 #include "surfel_meshing/surfel_meshing.h"
 #include "surfelmeshing_ros/surfelmeshing_parameters.h"
@@ -38,6 +37,10 @@ public:
     void integrateImages(vis::usize frame_index);
     static void MedianFilterAndDensifyDepthMap(const vis::Image<vis::u16>&, vis::Image<vis::u16>*);
     std::shared_ptr<vis::Mesh3fCu8> getMesh();
+    bool SavePointCloudAsPLY();
+    bool prepareOutput(vis::usize frame_index);
+
+    ~SurfelPipeline();
 
     vis::OpenGLContext opengl_context;
     cudaGraphicsResource_t vertex_buffer_resource = nullptr;
@@ -64,6 +67,8 @@ public:
     cudaEvent_t surfel_transfer_end_event;
 
     cudaEvent_t upload_finished_event;
+
+    // TODO: release this CUDA stuff at the end
 
 protected:
     SurfelMeshingParameters& param_;
@@ -99,11 +104,11 @@ protected:
     vis::u32 latest_mesh_frame_index;
     vis::u32 latest_mesh_surfel_count;
     vis::usize latest_mesh_triangle_count;
-    bool triangulation_in_progress;
 
     std::ostringstream timings_log;
     std::ostringstream meshing_timings_log;
 
     static constexpr int kStatsLogInterval = 200;
+    vis::ImageIOLibPng io;
 };
 #endif //SURFELMESHING_ROS_SURFELMESHING_H

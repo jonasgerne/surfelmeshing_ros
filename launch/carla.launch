@@ -5,7 +5,7 @@
     <remap from="image" to="/carla/ego_vehicle/camera/rgb/left/image_raw" />
     <remap from="depth_image" to="/carla/ego_vehicle/camera/depth/depth/image_depth" />
 
-    <param name="width" value="1242" />
+    <param name="width" value="1241" />
     <param name="height" value="376" />
     <param name="cam_fx" value="620.5000000000001" />
     <param name="cam_cx" value="620.5" />
@@ -18,5 +18,6 @@
     <param name="depth_threshold" value="100.0" />
     <param name="surfel_integration_active_window_size" value="2000" /> <!-- "Set to value larger than framecount of dataset-->
     <param name="depth_valid_region_radius" value="600" />
+    <param name="export_point_cloud" value="$(find surfelmeshing_ros)/output/$(anon surfel_pointcloud).ply" />
   </node>
 </launch>
