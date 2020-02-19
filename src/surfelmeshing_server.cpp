@@ -98,6 +98,7 @@ bool SurfelMeshingServer::generateMeshToolsMesh() {
 
 bool SurfelMeshingServer::setImuCam(const std::string &transform_str){
     // TODO: add error handling, probably use strtof instead of scanf
+    // if you get an error here, probably your systems LC_NUMERIC locale is not set to "C"
     float x, y, z, qx, qy, qz, qw;
     sscanf(transform_str.c_str(), "%f %f %f %f %f %f %f", &x, &y, &z, &qx, &qy, &qz, &qw);
     tf::Vector3 vec(x, y, z);

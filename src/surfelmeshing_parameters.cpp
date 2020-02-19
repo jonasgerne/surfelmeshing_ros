@@ -13,6 +13,9 @@ SurfelMeshingParameters::SurfelMeshingParameters(const ros::NodeHandle &nh_priva
     nh_private.getParam("width", width);
     nh_private.getParam("ego_to_cam", ego_to_cam);
 
+    ego_to_cam = "0.0 0.0 0.0 0.0 0.0 0.0 0.0";
+    nh_private.param("ego_to_cam", ego_to_cam, ego_to_cam);
+
     depth_scaling = 5000.0f;  // The default is for TUM RGB-D datasets.
     nh_private.param("depth_scaling", depth_scaling, depth_scaling); // "Input depth scaling: input_depth = depth_scaling * depth_in_meters. The default is for TUM RGB-D benchmark datasets."
 
