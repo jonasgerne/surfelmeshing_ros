@@ -68,8 +68,6 @@ public:
 
     cudaEvent_t upload_finished_event;
 
-    // TODO: release this CUDA stuff at the end
-
 protected:
     SurfelMeshingParameters& param_;
     vis::RGBDVideo<vis::Vec3u8, vis::u16>& rgbd_video_;
@@ -104,6 +102,7 @@ protected:
     vis::u32 latest_mesh_frame_index;
     vis::u32 latest_mesh_surfel_count;
     vis::usize latest_mesh_triangle_count;
+    bool triangulation_in_progress;
 
     std::ostringstream timings_log;
     std::ostringstream meshing_timings_log;

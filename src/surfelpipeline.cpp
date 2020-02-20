@@ -6,8 +6,9 @@
 
 #include <memory>
 
-SurfelPipeline::SurfelPipeline(SurfelMeshingParameters& param, const vis::PinholeCamera4f &depth_camera, const vis::Camera& scaled_camera,
-                               vis::RGBDVideo<vis::Vec3u8, vis::u16>& rgbd_video) :
+SurfelPipeline::SurfelPipeline(SurfelMeshingParameters &param, const vis::PinholeCamera4f &depth_camera,
+                               const vis::Camera &scaled_camera,
+                               vis::RGBDVideo<vis::Vec3u8, vis::u16> &rgbd_video) :
         param_(param),
         rgbd_video_(rgbd_video),
         depth_camera_(depth_camera),
@@ -24,7 +25,8 @@ SurfelPipeline::SurfelPipeline(SurfelMeshingParameters& param, const vis::Pinhol
                        param.regularization_frame_window_size, nullptr),
         latest_mesh_frame_index(0),
         latest_mesh_surfel_count(0),
-        latest_mesh_triangle_count(0) {
+        latest_mesh_triangle_count(0),
+        triangulation_in_progress(false) {
 
     cudaEventCreate(&depth_image_upload_pre_event);
     cudaEventCreate(&depth_image_upload_post_event);
@@ -60,11 +62,11 @@ SurfelPipeline::SurfelPipeline(SurfelMeshingParameters& param, const vis::Pinhol
             nullptr);
 }
 
-SurfelPipeline::~SurfelPipeline(){
-    for (vis::u16* ptr : depth_buffers_pagelocked_cache) {
+SurfelPipeline::~SurfelPipeline() {
+    for (vis::u16 *ptr : depth_buffers_pagelocked_cache) {
         cudaFreeHost(ptr);
     }
-    for (std::pair<int, vis::u16*> item : frame_index_to_depth_buffer_pagelocked) {
+    for (std::pair<int, vis::u16 *> item : frame_index_to_depth_buffer_pagelocked) {
         cudaFreeHost(item.second);
     }
 
@@ -138,7 +140,8 @@ void SurfelPipeline::integrateImages(vis::usize frame_index) {
         vis::Image<vis::u16> temp_depth_map;
         vis::Image<vis::u16> temp_depth_map_2;
         for (int iteration = 0; iteration < param_.median_filter_and_densify_iterations; ++iteration) {
-            vis::Image<vis::u16> *target_depth_map = (depth_map == &temp_depth_map) ? &temp_depth_map_2 : &temp_depth_map;
+            vis::Image<vis::u16> *target_depth_map = (depth_map == &temp_depth_map) ? &temp_depth_map_2
+                                                                                    : &temp_depth_map;
 
             target_depth_map->SetSize(depth_map->size());
             MedianFilterAndDensifyDepthMap(*depth_map, target_depth_map);
@@ -155,9 +158,9 @@ void SurfelPipeline::integrateImages(vis::usize frame_index) {
 
             vis::Image<vis::u16> downscaled_image(param_.width, param_.height);
             rgbd_video_.depth_frame_mutable(test_frame_index)->GetImage()->DownscaleUsingMedianWhileExcluding(0,
-                                                                                                                     param_.width,
-                                                                                                                     param_.height,
-                                                                                                             &downscaled_image);
+                                                                                                              param_.width,
+                                                                                                              param_.height,
+                                                                                                              &downscaled_image);
             memcpy(*pagelocked_ptr,
                    downscaled_image.data(),
                    param_.height * param_.width * sizeof(vis::u16));
@@ -177,7 +180,7 @@ void SurfelPipeline::integrateImages(vis::usize frame_index) {
     } else {
         memcpy(next_color_buffer_pagelocked,
                vis::ImagePyramid(rgbd_video_.color_frame_mutable(frame_index + 1).get(),
-                            param_.pyramid_level).GetOrComputeResult()->data(),
+                                 param_.pyramid_level).GetOrComputeResult()->data(),
                param_.width * param_.height * sizeof(vis::Vec3u8));
     }
     cudaEventRecord(color_image_upload_pre_event, upload_stream);
@@ -206,6 +209,7 @@ void SurfelPipeline::integrateImages(vis::usize frame_index) {
     vis::Image<vis::u16> debug_depth(param_.width, param_.height);
     if (param_.debug_depth_preprocessing) {
         depth_buffer->DownloadAsync(stream, &debug_depth);
+        // TODO: remove these fixed paths
         io.Write("/home/jonasgerstner/Pictures/conversion/0_before_bilateral.png", debug_depth);
     }
 
@@ -222,7 +226,7 @@ void SurfelPipeline::integrateImages(vis::usize frame_index) {
             &filtered_depth_buffer_A.ToCUDA());
     cudaEventRecord(bilateral_filtering_post_event, stream);
 
-    if (param_.debug_depth_preprocessing){
+    if (param_.debug_depth_preprocessing) {
         filtered_depth_buffer_A.DownloadAsync(stream, &debug_depth);
         cudaStreamSynchronize(stream);
         io.Write("/home/jonasgerstner/Pictures/conversion/2_bilateral.png", debug_depth);
@@ -256,7 +260,7 @@ void SurfelPipeline::integrateImages(vis::usize frame_index) {
     }
 
     if (param_.outlier_filtering_required_inliers == -1 ||
-            param_.outlier_filtering_required_inliers == param_.outlier_filtering_frame_count) {
+        param_.outlier_filtering_required_inliers == param_.outlier_filtering_frame_count) {
         // Use a macro to pre-compile several versions of the template function.
 #define CALL_OUTLIER_FUSION(other_frame_count) \
           vis::OutlierDepthMapFusionCUDA<other_frame_count + 1, vis::u16>( \
@@ -279,7 +283,8 @@ void SurfelPipeline::integrateImages(vis::usize frame_index) {
         } else if (param_.outlier_filtering_frame_count == 8) {
             CALL_OUTLIER_FUSION(8);
         } else {
-            ROS_FATAL_STREAM("Unsupported value for outlier_filtering_frame_count: " << param_.outlier_filtering_frame_count);
+            ROS_FATAL_STREAM(
+                    "Unsupported value for outlier_filtering_frame_count: " << param_.outlier_filtering_frame_count);
         }
 #undef CALL_OUTLIER_FUSION
     } else {
@@ -306,7 +311,8 @@ void SurfelPipeline::integrateImages(vis::usize frame_index) {
         } else if (param_.outlier_filtering_frame_count == 8) {
             CALL_OUTLIER_FUSION(8);
         } else {
-            ROS_FATAL_STREAM("Unsupported value for outlier_filtering_frame_count: " << param_.outlier_filtering_frame_count);
+            ROS_FATAL_STREAM(
+                    "Unsupported value for outlier_filtering_frame_count: " << param_.outlier_filtering_frame_count);
         }
 #undef CALL_OUTLIER_FUSION
     }
@@ -413,30 +419,44 @@ void SurfelPipeline::integrateImages(vis::usize frame_index) {
      * if we expect that the next iteration will start very soon,
      * and for the last frame if the final result is needed.
     */
-    cudaEventRecord(surfel_transfer_start_event, stream);
-    triangulation_thread->LockInputData();
-    cuda_surfels_cpu_buffers.LockWriteBuffers();
+    bool no_meshing_in_progress = !triangulation_in_progress;
+    bool next_meshing_expected_soon = false;
+    if (!no_meshing_in_progress) {
+        double time_since_last_meshing_start =
+                1e-9 * std::chrono::duration<double, std::nano>(
+                        std::chrono::steady_clock::now() -
+                        triangulation_thread->latest_triangulation_start_time()).count();
+        next_meshing_expected_soon =
+                time_since_last_meshing_start > triangulation_thread->latest_triangulation_duration() - 0.05f;
+    }
+    if (no_meshing_in_progress) {
+        cudaEventRecord(surfel_transfer_start_event, stream);
+        triangulation_thread->LockInputData();
+        cuda_surfels_cpu_buffers.LockWriteBuffers();
 
-    reconstruction.TransferAllToCPU(
-            stream,
-            frame_index,
-            &cuda_surfels_cpu_buffers);
+        reconstruction.TransferAllToCPU(
+                stream,
+                frame_index,
+                &cuda_surfels_cpu_buffers);
 
-    cudaEventRecord(surfel_transfer_end_event, stream);
-    cudaStreamSynchronize(stream);
+        cudaEventRecord(surfel_transfer_end_event, stream);
+        cudaStreamSynchronize(stream);
 
-    // Notify the triangulation thread about new input data.
-    // NOTE: It must be avoided to send this notification after the thread
-    //       has already started working on the input (due to a previous
-    //       notification), so do it while the write buffers are locked.
-    //       Otherwise, the thread might later continue its
-    //       next iteration before the write buffer was updated again,
-    //       resulting in wrong data being used, in particular many surfels
-    //       might be at (0, 0, 0).
-    triangulation_thread->NotifyAboutNewInputSurfelsAlreadyLocked();
+        // Notify the triangulation thread about new input data.
+        // NOTE: It must be avoided to send this notification after the thread
+        //       has already started working on the input (due to a previous
+        //       notification), so do it while the write buffers are locked.
+        //       Otherwise, the thread might later continue its
+        //       next iteration before the write buffer was updated again,
+        //       resulting in wrong data being used, in particular many surfels
+        //       might be at (0, 0, 0).
+        triangulation_thread->NotifyAboutNewInputSurfelsAlreadyLocked();
 
-    cuda_surfels_cpu_buffers.UnlockWriteBuffers();
-    triangulation_thread->UnlockInputData();
+        triangulation_in_progress = true;
+
+        cuda_surfels_cpu_buffers.UnlockWriteBuffers();
+        triangulation_thread->UnlockInputData();
+    }
 
     cudaStreamSynchronize(stream);
     complete_frame_timer.Stop();
@@ -627,11 +647,11 @@ bool SurfelPipeline::prepareOutput(vis::usize frame_index) {
 }
 
 std::shared_ptr<vis::Mesh3fCu8> SurfelPipeline::getMesh() {
-    LOG(INFO) << "Waiting for final mesh ...";
+    ROS_INFO("Waiting for final mesh ...");
     while (!triangulation_thread->all_work_done())
         usleep(0);
 
-    CHECK_EQ(surfel_meshing.surfels().size(), reconstruction.surfels_size());
+            CHECK_EQ(surfel_meshing.surfels().size(), reconstruction.surfels_size());
     std::shared_ptr<vis::Mesh3fCu8> mesh(new vis::Mesh3fCu8());
     // Also use the positions from the surfel_meshing such that positions
     // and the mesh are from a consistent state.
@@ -640,14 +660,14 @@ std::shared_ptr<vis::Mesh3fCu8> SurfelPipeline::getMesh() {
     vis::CUDABuffer<float> position_buffer(1, 3 * reconstruction.surfels_size());
     vis::CUDABuffer<vis::u8> color_buffer(1, 3 * reconstruction.surfels_size());
     reconstruction.ExportVertices(stream, &position_buffer, &color_buffer);
-    float* position_buffer_cpu = new float[3 * reconstruction.surfels_size()];
-    vis::u8* color_buffer_cpu = new vis::u8[3 * reconstruction.surfels_size()];
+    float *position_buffer_cpu = new float[3 * reconstruction.surfels_size()];
+    vis::u8 *color_buffer_cpu = new vis::u8[3 * reconstruction.surfels_size()];
     position_buffer.DownloadAsync(stream, position_buffer_cpu);
     color_buffer.DownloadAsync(stream, color_buffer_cpu);
     cudaStreamSynchronize(stream);
     vis::usize index = 0;
     int count_nans = 0;
-    CHECK_EQ(mesh->vertices()->size(), reconstruction.surfel_count());
+            CHECK_EQ(mesh->vertices()->size(), reconstruction.surfel_count());
 
     for (vis::usize i = 0; i < reconstruction.surfels_size(); ++i) {
         if (isnan(position_buffer_cpu[3 * i + 0])) {
@@ -655,14 +675,14 @@ std::shared_ptr<vis::Mesh3fCu8> SurfelPipeline::getMesh() {
             continue;
         }
 
-        vis::Point3fC3u8* point = &(*mesh->vertices_mutable())->at(index);
+        vis::Point3fC3u8 *point = &(*mesh->vertices_mutable())->at(index);
         point->color() = vis::Vec3u8(color_buffer_cpu[3 * i + 0],
-                                color_buffer_cpu[3 * i + 1],
-                                color_buffer_cpu[3 * i + 2]);
+                                     color_buffer_cpu[3 * i + 1],
+                                     color_buffer_cpu[3 * i + 2]);
         ++index;
     }
 
-    CHECK_EQ(index, mesh->vertices()->size());
+            CHECK_EQ(index, mesh->vertices()->size());
 
     delete[] color_buffer_cpu;
     delete[] position_buffer_cpu;
@@ -671,7 +691,7 @@ std::shared_ptr<vis::Mesh3fCu8> SurfelPipeline::getMesh() {
 }
 
 // Saves the reconstructed surfels as a point cloud in PLY format.
-bool SurfelPipeline::SavePointCloudAsPLY(){
+bool SurfelPipeline::SavePointCloudAsPLY() {
     // CHECK_EQ(surfel_meshing.surfels().size(), reconstruction.surfels_size());
 
     vis::Point3fCloud cloud;

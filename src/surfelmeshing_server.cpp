@@ -93,6 +93,7 @@ bool SurfelMeshingServer::generateMeshToolsMesh() {
     mesh_msg_stmp.header.frame_id = "world";
 
     rosmesh_pub_.publish(mesh_msg_stmp);
+    ROS_INFO("Published mesh, topic: %s", rosmesh_pub_.getTopic().c_str());
     return true;
 }
 
