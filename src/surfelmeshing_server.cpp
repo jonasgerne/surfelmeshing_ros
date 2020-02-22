@@ -13,6 +13,7 @@ SurfelMeshingServer::SurfelMeshingServer(const ros::NodeHandle& nh, const ros::N
       {
 
     rosmesh_pub_ = nh_private_.advertise<mesh_msgs::TriangleMeshStamped>("rosmesh", 1, true);
+    pcl_mesh_pub_ = nh_private_.advertise<pcl_msgs::PolygonMesh>("mesh_pcl", 1, true);
 
     float camera_parameters[4] = {param_.cam_fx, param_.cam_fy, param_.cam_cx + 0.5f, param_.cam_cy + 0.5f};
     rgbd_video.color_camera_mutable()->reset(new vis::PinholeCamera4f(param_.width, param_.height, camera_parameters));
@@ -32,6 +33,8 @@ SurfelMeshingServer::SurfelMeshingServer(const ros::NodeHandle& nh, const ros::N
     pipeline_ptr.reset(new SurfelPipeline(param_, depth_camera, *scaled_camera, rgbd_video));
 
     generate_mesh_srv_ = nh_private_.advertiseService("generate_mesh", &SurfelMeshingServer::generateMeshCallback,this);
+
+    generate_pcl_mesh_srv_ = nh_private_.advertiseService("generate_pcl_mesh", &SurfelMeshingServer::generatePCLMeshCallback, this);
 
     save_ply_srv_ = nh_private_.advertiseService("save_ply", &SurfelMeshingServer::savePLYCallback, this);
 
@@ -78,6 +81,11 @@ bool SurfelMeshingServer::generateMeshCallback(std_srvs::Empty::Request& /*reque
     return generateMeshToolsMesh();
 }
 
+bool SurfelMeshingServer::generatePCLMeshCallback(std_srvs::Empty::Request& /*request*/,
+                                                  std_srvs::Empty::Response& /*response*/){  // NOLINT
+    generatePCLPolygonMesh();
+}
+
 bool SurfelMeshingServer::savePLYCallback(std_srvs::Empty::Request& /*request*/,
                                                std_srvs::Empty::Response& /*response*/) {  // NOLINT
     return pipeline_ptr->SavePointCloudAsPLY();
@@ -94,6 +102,20 @@ bool SurfelMeshingServer::generateMeshToolsMesh() {
 
     rosmesh_pub_.publish(mesh_msg_stmp);
     ROS_INFO("Published mesh, topic: %s", rosmesh_pub_.getTopic().c_str());
+    return true;
+}
+
+bool SurfelMeshingServer::generatePCLPolygonMesh(){
+    pipeline_ptr->prepareOutput(current_frame_-1);
+    auto mesh = pipeline_ptr->getMesh();
+
+    pcl::PolygonMesh polygon_mesh;
+    ROSConversions::fromLibvis(mesh, &polygon_mesh);
+    pcl_msgs::PolygonMesh pcl_mesh_msg;
+    pcl_conversions::fromPCL(polygon_mesh, pcl_mesh_msg);
+    pcl_mesh_msg.header.stamp = ros::Time::now();
+    pcl_mesh_pub_.publish(pcl_mesh_msg);
+
     return true;
 }
 

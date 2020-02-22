@@ -22,9 +22,6 @@ if(Qt5Widgets_FOUND)
 endif()
 
 find_package(libvis REQUIRED)
-message("INCL: ${libvis_INCLUDE_DIRS}")
-message("LIBS: ${libvis_LIBRARIES} / ${libvis_LIBRARY} / ${libvis_LIBRARY_DIRS}")
-
 #############
 # LIBRARIES #
 #############
